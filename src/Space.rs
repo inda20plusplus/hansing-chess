@@ -1,17 +1,4 @@
-#[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
-pub struct Space(i32, i32);
 
-impl Space {
-    pub fn is_in_bounds(&self) -> bool {
-        self.0 >= 0 && self.0 < 8 && self.1 >= 0 && self.1 < 8
-    }
-    pub fn offset(&self, rank_offset: i32, file_offset: i32) -> Self {
-        Self(self.0 + rank_offset, self.1 + file_offset)
-    }
-    pub fn new(rank: i32, file: i32)->Self{
-        Self(rank, file)
-    }
-}
 
 #[cfg(test)]
 mod space{

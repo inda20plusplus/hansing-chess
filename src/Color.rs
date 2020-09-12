@@ -17,10 +17,16 @@ impl Color {
             Color::White => 1,
         }
     }
+    pub fn seventh_rank(&self) -> i32 {
+        match self {
+            Color::White => 6,
+            Color::Black => 1,
+        }
+    }
 }
 
 #[cfg(test)]
-mod test_color{
+mod test_color {
     use super::*;
     #[test]
     fn equals() {
@@ -31,7 +37,7 @@ mod test_color{
         assert_eq!(Color::White.inverse(), Color::Black);
     }
     #[test]
-    fn forward(){
+    fn forward() {
         assert_eq!(Color::White.forward(), 1);
         assert_eq!(Color::Black.forward(), -1);
     }

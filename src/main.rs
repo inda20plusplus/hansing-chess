@@ -64,7 +64,7 @@ impl Piece {
             PieceType::Bishop => vec![(1, 1, true), (-1, -1, true), (-1, 1, true), (1, -1, true)],
 
             PieceType::Rook => vec![(1, 0, true), (-1, 0, true), (0, 1, true), (0, -1, true)],
-            
+
             PieceType::Queen => vec![
                 (1, 0, true),
                 (-1, 0, true),

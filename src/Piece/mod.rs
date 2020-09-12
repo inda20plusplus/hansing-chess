@@ -1,4 +1,6 @@
 use super::Color::Color;
+mod MoveRules;
+
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum PieceType {
     Pawn,
@@ -26,6 +28,23 @@ impl Piece {
 
     pub fn get_move_pattern(&self) -> Vec<(i32, i32, bool)> {
         match self.piece_type {
+            //PieceType::Pawn =>
+            PieceType::Knight => MoveRules::KNIGHT_MOVES.to_vec(),
+
+            PieceType::Bishop => MoveRules::BISHOP_MOVES.to_vec(),
+
+            PieceType::Rook => MoveRules::ROOK_MOVES.to_vec(),
+
+            PieceType::Queen => MoveRules::QUEEN_MOVES.to_vec(),
+
+            PieceType::King => MoveRules::KING_MOVES.to_vec(),
+
+            _ => Vec::new(),
+        }
+    }
+    /*
+    pub fn get_move_pattern(&self) -> Vec<(i32, i32, bool)> {
+        match self.piece_type {
             PieceType::Pawn => vec![(self.color.forward(), 0, false)],
 
             PieceType::Knight => vec![
@@ -42,7 +61,7 @@ impl Piece {
             PieceType::Bishop => vec![(1, 1, true), (-1, -1, true), (-1, 1, true), (1, -1, true)],
 
             PieceType::Rook => vec![(1, 0, true), (-1, 0, true), (0, 1, true), (0, -1, true)],
-            
+
             PieceType::Queen => vec![
                 (1, 0, true),
                 (-1, 0, true),
@@ -65,10 +84,10 @@ impl Piece {
                 (1, -1, false),
             ],
         }
-    }
+    }*/
 }
 #[cfg(test)]
-mod piece{
+mod piece {
     use super::*;
     #[test]
     fn piece_type_equals() {
@@ -76,5 +95,4 @@ mod piece{
         assert_eq!(PieceType::King, PieceType::King);
         assert_ne!(PieceType::Rook, PieceType::Pawn);
     }
-
 }
