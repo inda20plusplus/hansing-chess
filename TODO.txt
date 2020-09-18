@@ -1,0 +1,17 @@
+Improvments
+-Pregen move results for more possibilities with gui integration,
+    -maybe use flexible Option<Board> in MoveData to ALLOW for pregen without DEMANDING it.
+-Build system for prompting promotions
+-Refractor Castleing
+-Refractor Threats
+-Consider if there is a better way to do movegen/board file split
+-Standardized function for getting relevant data from board.pieces
+    -maybe integrate with replacemnet for Occupancy
+-Rework module structure (more folders)
+-More/better fmt implementations
+-Look over names and naming convension
+
+Features
+-Load from file (use chess standard like PGN?)
+-History and undo
+-Smart annotations as input (and MoveData fmt?) for better terminal interface
