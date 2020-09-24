@@ -1,7 +1,8 @@
-use board::Board;
 use ggez::event::{self, EventHandler};
 use ggez::graphics;
 use ggez::{timer, Context, ContextBuilder, GameResult};
+use hansing_chess::board::Board;
+use hansing_chess::square::Square;
 
 fn main() {
     // Make a Context and an EventLoop.

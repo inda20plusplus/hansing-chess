@@ -2,7 +2,6 @@ use crate::board::Board;
 use crate::color::Color;
 use crate::movedata::MoveData;
 use crate::movegen::*;
-use crate::square::Square;
 use crate::title::Title;
 pub struct Game {
     pub board: Board,
