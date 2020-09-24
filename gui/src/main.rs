@@ -1,11 +1,10 @@
 use ggez::event::{self, EventHandler};
 use ggez::graphics;
 use ggez::input::mouse;
-use ggez::{timer, Context, ContextBuilder, GameResult};
+use ggez::{Context, ContextBuilder, GameResult};
 use hansing_chess::color::Color;
 use hansing_chess::game::Game;
 use hansing_chess::movegen;
-use hansing_chess::piece::Piece;
 use hansing_chess::square::Square;
 use hansing_chess::title::Title;
 
@@ -28,7 +27,6 @@ fn main() {
 }
 
 struct MyGame {
-    dt: std::time::Duration,
     sprites: Vec<graphics::Image>,
     game: Game,
     piece_holding: [i32; 2],
@@ -54,7 +52,6 @@ impl MyGame {
         v.push(graphics::Image::new(ctx, image_dir.join("black_king.png")).unwrap());
 
         MyGame {
-            dt: std::time::Duration::new(0, 0),
             sprites: v,
             game: Game::new(),
             piece_holding: [-1, -1],
@@ -62,34 +59,37 @@ impl MyGame {
     }
 
     pub fn draw_board(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let tile_white = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(0.0, 0.0, 60.0, 60.0),
+            graphics::Color::from_rgb(140, 140, 140),
+        )
+        .unwrap();
+
+        let tile_black = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(0.0, 0.0, 60.0, 60.0),
+            graphics::Color::from_rgb(62, 62, 62),
+        )
+        .unwrap();
+
+        let dst = graphics::DrawParam::default();
         for i in 0..8 {
             for j in 0..8 {
                 if (j + i) % 2 == 0 {
-                    let tile = graphics::Mesh::new_rectangle(
+                    graphics::draw(
                         ctx,
-                        graphics::DrawMode::fill(),
-                        graphics::Rect::new(
-                            160.0 + (i as f32 * 60.0),
-                            60.0 + (j as f32 * 60.0),
-                            60.0,
-                            60.0,
-                        ),
-                        graphics::Color::from_rgb(140, 140, 140),
-                    );
-                    graphics::draw(ctx, &tile.unwrap(), graphics::DrawParam::default())?;
+                        &tile_white,
+                        dst.dest([160.0 + (j as f32 * 60.0), 60.0 + (i as f32 * 60.0)]),
+                    )?;
                 } else {
-                    let tile = graphics::Mesh::new_rectangle(
+                    graphics::draw(
                         ctx,
-                        graphics::DrawMode::fill(),
-                        graphics::Rect::new(
-                            160.0 + (i as f32 * 60.0),
-                            60.0 + (j as f32 * 60.0),
-                            60.0,
-                            60.0,
-                        ),
-                        graphics::Color::from_rgb(62, 62, 62),
-                    );
-                    graphics::draw(ctx, &tile.unwrap(), graphics::DrawParam::default())?;
+                        &tile_black,
+                        dst.dest([160.0 + (j as f32 * 60.0), 60.0 + (i as f32 * 60.0)]),
+                    )?;
                 }
             }
         }
@@ -107,31 +107,31 @@ impl MyGame {
                             .scale([0.05859375, 0.05859375]);
                         if self.game.board.pieces[&s].color == Color::White {
                             if self.game.board.pieces[&s].title == Title::Pawn {
-                                graphics::draw(ctx, &self.sprites[0], a);
+                                graphics::draw(ctx, &self.sprites[0], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Rook {
-                                graphics::draw(ctx, &self.sprites[1], a);
+                                graphics::draw(ctx, &self.sprites[1], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Knight {
-                                graphics::draw(ctx, &self.sprites[2], a);
+                                graphics::draw(ctx, &self.sprites[2], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Bishop {
-                                graphics::draw(ctx, &self.sprites[3], a);
+                                graphics::draw(ctx, &self.sprites[3], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Queen {
-                                graphics::draw(ctx, &self.sprites[4], a);
+                                graphics::draw(ctx, &self.sprites[4], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::King {
-                                graphics::draw(ctx, &self.sprites[5], a);
+                                graphics::draw(ctx, &self.sprites[5], a).ok();
                             }
                         } else {
                             if self.game.board.pieces[&s].title == Title::Pawn {
-                                graphics::draw(ctx, &self.sprites[6], a);
+                                graphics::draw(ctx, &self.sprites[6], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Rook {
-                                graphics::draw(ctx, &self.sprites[7], a);
+                                graphics::draw(ctx, &self.sprites[7], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Knight {
-                                graphics::draw(ctx, &self.sprites[8], a);
+                                graphics::draw(ctx, &self.sprites[8], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Bishop {
-                                graphics::draw(ctx, &self.sprites[9], a);
+                                graphics::draw(ctx, &self.sprites[9], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::Queen {
-                                graphics::draw(ctx, &self.sprites[10], a);
+                                graphics::draw(ctx, &self.sprites[10], a).ok();
                             } else if self.game.board.pieces[&s].title == Title::King {
-                                graphics::draw(ctx, &self.sprites[11], a);
+                                graphics::draw(ctx, &self.sprites[11], a).ok();
                             }
                         }
                     }
@@ -144,11 +144,19 @@ impl MyGame {
 
 impl EventHandler for MyGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.dt = timer::delta(ctx);
+        let bench = std::time::Instant::now();
 
         let coord = mouse::position(ctx);
         let coord_x: i32 = ((coord.x - 160.0) / 60.0) as i32;
         let coord_y: i32 = ((coord.y - 60.0) / 60.0) as i32;
+
+        println!(
+            "The coords time was: {}",
+            std::time::Instant::now()
+                .duration_since(bench)
+                .subsec_micros()
+        );
+        let bench = std::time::Instant::now();
 
         if mouse::button_pressed(ctx, mouse::MouseButton::Left) && self.piece_holding == [-1, -1] {
             if coord_x >= 0 && coord_x <= 7 && coord_y >= 0 && coord_y <= 7 {
@@ -170,15 +178,49 @@ impl EventHandler for MyGame {
                 self.piece_holding = [coord_x, coord_y];
             }
         }
+        println!(
+            "The mouse time was: {}",
+            std::time::Instant::now()
+                .duration_since(bench)
+                .subsec_micros()
+        );
 
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let bench = std::time::Instant::now();
         graphics::clear(ctx, graphics::Color::from_rgb(15, 15, 20));
-        self.draw_board(ctx);
-        self.draw_pieces(ctx);
+        println!(
+            "The clear time was: {}",
+            std::time::Instant::now()
+                .duration_since(bench)
+                .subsec_micros()
+        );
+        let bench = std::time::Instant::now();
+        self.draw_board(ctx).ok();
+        println!(
+            "The board time was: {}",
+            std::time::Instant::now()
+                .duration_since(bench)
+                .subsec_micros()
+        );
+        let bench = std::time::Instant::now();
+        self.draw_pieces(ctx).ok();
+        println!(
+            "The pieces time was: {}",
+            std::time::Instant::now()
+                .duration_since(bench)
+                .subsec_micros()
+        );
+        let bench = std::time::Instant::now();
         graphics::present(ctx)?;
+        println!(
+            "The present time was: {}",
+            std::time::Instant::now()
+                .duration_since(bench)
+                .subsec_micros()
+        );
         Ok(())
     }
 }
