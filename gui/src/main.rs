@@ -1,3 +1,4 @@
+use board::Board;
 use ggez::event::{self, EventHandler};
 use ggez::graphics;
 use ggez::{timer, Context, ContextBuilder, GameResult};
@@ -16,19 +17,37 @@ fn main() {
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut my_game) {
         Ok(_) => println!("Exited cleanly."),
-        Err(e) => println!("Error occured: {}", e),
+        Err(e) => println!("Error occurred: {}", e),
     }
 }
 
 struct MyGame {
     dt: std::time::Duration,
+    sprites: Vec<graphics::Image>,
 }
 
 impl MyGame {
-    pub fn new(_ctx: &mut Context) -> MyGame {
+    pub fn new(ctx: &mut Context) -> MyGame {
         // Load/create resources here: images, fonts, sounds, etc.
+        let mut v: Vec<graphics::Image> = Vec::new();
+        let image_dir = std::path::Path::new("/images");
+        v.push(graphics::Image::new(ctx, image_dir.join("white_pawn.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("white_rook.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("white_knight.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("white_bishop.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("white_queen.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("white_king.png")).unwrap());
+
+        v.push(graphics::Image::new(ctx, image_dir.join("black_pawn.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("black_rook.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("black_knight.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("black_bishop.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("black_queen.png")).unwrap());
+        v.push(graphics::Image::new(ctx, image_dir.join("black_king.png")).unwrap());
+
         MyGame {
             dt: std::time::Duration::new(0, 0),
+            sprites: v,
         }
     }
 
@@ -65,6 +84,26 @@ impl MyGame {
             }
         }
 
+        Ok(())
+    }
+
+    pub fn draw_pieces(&mut self, ctx: &mut Context, board: Board) -> GameResult<()> {
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                if let Some(s) = Square::new(rank, file) {
+                    if board.pieces.contains_key(&s) {
+                        print!("{} ", board.pieces[&s].to_char())
+                    } else {
+                        if (rank + file) % 2 == 0 {
+                            print!(", ");
+                        } else {
+                            print!(". ");
+                        }
+                    }
+                }
+            }
+            println!();
+        }
         Ok(())
     }
 }

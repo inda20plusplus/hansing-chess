@@ -69,22 +69,22 @@ pub fn print_board_state(board: &Board) {
     println!("CHESS! {} to play.", board.to_act);
     println!("  _a_b_c_d_e_f_g_h_");
 
-    for rank in (0..8).rev() {
-        print!("{}| ", rank + 1);
-        for file in 0..8 {
-            if let Some(s) = Square::new(rank, file) {
-                if board.pieces.contains_key(&s) {
-                    print!("{} ", board.pieces[&s].to_char())
-                } else {
-                    if (rank + file) % 2 == 0 {
-                        print!(", ");
-                    } else {
-                        print!(". ");
-                    }
-                }
-            }
-        }
-        println!();
-    }
+    // for rank in (0..8).rev() {
+    //     print!("{}| ", rank + 1);
+    //     for file in 0..8 {
+    //         if let Some(s) = Square::new(rank, file) {
+    //             if board.pieces.contains_key(&s) {
+    //                 print!("{} ", board.pieces[&s].to_char())
+    //             } else {
+    //                 if (rank + file) % 2 == 0 {
+    //                     print!(", ");
+    //                 } else {
+    //                     print!(". ");
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     println!();
+    // }
     println!("  -a-b-c-d-e-f-g-h-")
 }
