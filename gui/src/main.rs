@@ -1,7 +1,7 @@
 use ggez::event::{self, EventHandler};
 use ggez::graphics;
 use ggez::input::mouse;
-use ggez::{Context, ContextBuilder, GameResult};
+use ggez::{timer, Context, ContextBuilder, GameResult};
 use hansing_chess::color::Color;
 use hansing_chess::game::Game;
 use hansing_chess::movegen;
@@ -27,6 +27,7 @@ fn main() {
 }
 
 struct MyGame {
+    dt: std::time::Duration,
     sprites: Vec<graphics::Image>,
     game: Game,
     piece_holding: [i32; 2],
@@ -52,6 +53,7 @@ impl MyGame {
         v.push(graphics::Image::new(ctx, image_dir.join("black_king.png")).unwrap());
 
         MyGame {
+            dt: std::time::Duration::new(0, 0),
             sprites: v,
             game: Game::new(),
             piece_holding: [-1, -1],
@@ -144,19 +146,9 @@ impl MyGame {
 
 impl EventHandler for MyGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let bench = std::time::Instant::now();
-
         let coord = mouse::position(ctx);
         let coord_x: i32 = ((coord.x - 160.0) / 60.0) as i32;
         let coord_y: i32 = ((coord.y - 60.0) / 60.0) as i32;
-
-        println!(
-            "The coords time was: {}",
-            std::time::Instant::now()
-                .duration_since(bench)
-                .subsec_micros()
-        );
-        let bench = std::time::Instant::now();
 
         if mouse::button_pressed(ctx, mouse::MouseButton::Left) && self.piece_holding == [-1, -1] {
             if coord_x >= 0 && coord_x <= 7 && coord_y >= 0 && coord_y <= 7 {
@@ -169,58 +161,30 @@ impl EventHandler for MyGame {
                 let all_moves = movegen::generate_action_space(self.game.board.clone());
                 for curr_move in all_moves.iter() {
                     if curr_move.from
-                        == Square::new(self.piece_holding[0], self.piece_holding[1]).unwrap()
-                        && curr_move.to == Square::new(coord_x, coord_y).unwrap()
+                        == Square::new(self.piece_holding[1], self.piece_holding[0]).unwrap()
+                        && curr_move.to == Square::new(coord_y, coord_x).unwrap()
                     {
                         self.game.make_move(*curr_move);
+                        self.piece_holding = [-1, -1];
+                        break;
                     }
                 }
-                self.piece_holding = [coord_x, coord_y];
             }
+            self.piece_holding = [-1, -1];
+        } else if !mouse::button_pressed(ctx, mouse::MouseButton::Left)
+            && self.piece_holding != [-1, -1]
+        {
+            self.piece_holding = [-1, -1];
         }
-        println!(
-            "The mouse time was: {}",
-            std::time::Instant::now()
-                .duration_since(bench)
-                .subsec_micros()
-        );
-
+        timer::yield_now();
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let bench = std::time::Instant::now();
         graphics::clear(ctx, graphics::Color::from_rgb(15, 15, 20));
-        println!(
-            "The clear time was: {}",
-            std::time::Instant::now()
-                .duration_since(bench)
-                .subsec_micros()
-        );
-        let bench = std::time::Instant::now();
         self.draw_board(ctx).ok();
-        println!(
-            "The board time was: {}",
-            std::time::Instant::now()
-                .duration_since(bench)
-                .subsec_micros()
-        );
-        let bench = std::time::Instant::now();
         self.draw_pieces(ctx).ok();
-        println!(
-            "The pieces time was: {}",
-            std::time::Instant::now()
-                .duration_since(bench)
-                .subsec_micros()
-        );
-        let bench = std::time::Instant::now();
         graphics::present(ctx)?;
-        println!(
-            "The present time was: {}",
-            std::time::Instant::now()
-                .duration_since(bench)
-                .subsec_micros()
-        );
         Ok(())
     }
 }
