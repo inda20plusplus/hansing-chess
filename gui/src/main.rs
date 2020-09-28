@@ -8,9 +8,22 @@ use hansing_chess::movegen;
 use hansing_chess::square::Square;
 use hansing_chess::title::Title;
 
+use std::env;
+use std::path::{PathBuf};
+
 fn main() {
+    // Make path for images
+    let path = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        let mut path = PathBuf::from(manifest_dir);
+        path.push("images");
+        //path.push("assets");
+        path
+    } else {
+        PathBuf::from("./images")
+    };
     // Make a Context and an EventLoop.
     let (mut ctx, mut event_loop) = ContextBuilder::new("game_name", "author_name")
+    .add_resource_path(path)
         .build()
         .unwrap();
 
@@ -24,10 +37,12 @@ fn main() {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occurred: {}", e),
     }
+
+
 }
 
 struct MyGame {
-    dt: std::time::Duration,
+    //dt: std::time::Duration, //dead code
     sprites: Vec<graphics::Image>,
     game: Game,
     piece_holding: [i32; 2],
@@ -37,23 +52,23 @@ impl MyGame {
     pub fn new(ctx: &mut Context) -> MyGame {
         // Load/create resources here: images, fonts, sounds, etc.
         let mut v: Vec<graphics::Image> = Vec::new();
-        let image_dir = std::path::Path::new("/images");
-        v.push(graphics::Image::new(ctx, image_dir.join("white_pawn.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("white_rook.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("white_knight.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("white_bishop.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("white_queen.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("white_king.png")).unwrap());
+        
+        v.push(graphics::Image::new(ctx, "/white_pawn.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/white_rook.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/white_knight.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/white_bishop.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/white_queen.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/white_king.png").unwrap());
 
-        v.push(graphics::Image::new(ctx, image_dir.join("black_pawn.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("black_rook.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("black_knight.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("black_bishop.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("black_queen.png")).unwrap());
-        v.push(graphics::Image::new(ctx, image_dir.join("black_king.png")).unwrap());
+        v.push(graphics::Image::new(ctx, "/black_pawn.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/black_rook.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/black_knight.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/black_bishop.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/black_queen.png").unwrap());
+        v.push(graphics::Image::new(ctx, "/black_king.png").unwrap());
 
         MyGame {
-            dt: std::time::Duration::new(0, 0),
+            //dt: std::time::Duration::new(0, 0),//dead code
             sprites: v,
             game: Game::new(),
             piece_holding: [-1, -1],
@@ -106,7 +121,7 @@ impl MyGame {
                     if self.game.board.pieces.contains_key(&s) {
                         let a = graphics::DrawParam::new()
                             .dest([160.0 + (j as f32 * 60.0), 60.0 + (i as f32 * 60.0)])
-                            .scale([0.05859375, 0.05859375]);
+                            .scale([0.05859375 * 17.0, 0.05859375 * 17.0]); // Tweek these values if pieces appear to large or to small
                         if self.game.board.pieces[&s].color == Color::White {
                             if self.game.board.pieces[&s].title == Title::Pawn {
                                 graphics::draw(ctx, &self.sprites[0], a).ok();
