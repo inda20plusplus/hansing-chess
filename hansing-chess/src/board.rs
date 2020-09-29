@@ -346,7 +346,7 @@ mod test_board {
         let mut board = Board::new_standard();
         board.make_move(standard);
         assert!(!board.pieces.contains_key(&d2));
-        assert_eq!(board.pieces[&d5], Piece::new(Color::White, Title::Pawn));
+        assert_eq!(board.pieces[&d5], Piece{color: Color::White, title: Title::Pawn, has_moved: true});
         assert_eq!(board.captures.len(), 0);
         board.make_move(double_step);
         assert_eq!(board.en_passant.unwrap(), e6);
@@ -354,12 +354,12 @@ mod test_board {
         assert_eq!(board.captures.len(), 1);
         board.make_move(promotion);
         assert!(!board.pieces.contains_key(&a2));
-        assert_eq!(board.pieces[&a8], Piece::new(Color::White, Title::Queen));
+        assert_eq!(board.pieces[&a8], Piece{color: Color::White, title: Title::Queen, has_moved: false});
         board.make_move(casteling);
         assert!(!board.pieces.contains_key(&a1));
         assert!(!board.pieces.contains_key(&e1));
-        assert_eq!(board.pieces[&a3], Piece::new(Color::White, Title::Rook));
-        assert_eq!(board.pieces[&e3], Piece::new(Color::White, Title::King));
+        assert_eq!(board.pieces[&a3], Piece{color: Color::White, title: Title::Rook, has_moved: true});
+        assert_eq!(board.pieces[&e3], Piece{color: Color::White, title: Title::King, has_moved: true});
     }
     #[test]
     fn king_pos() {
@@ -525,10 +525,10 @@ mod test_board {
         board.move_piece(a, b);
         assert_eq!(board.captures.len(), 0);
         assert!(!board.pieces.contains_key(&a));
-        assert_eq!(board.pieces[&b], Piece::new(Color::White, Title::Queen));
+        assert_eq!(board.pieces[&b], Piece{color: Color::White, title: Title::Queen, has_moved: true});
         board.move_piece_with_capture(b, c);
         assert_eq!(board.captures.len(), 1);
         assert!(!board.pieces.contains_key(&b));
-        assert_eq!(board.pieces[&c], Piece::new(Color::White, Title::Queen));
+        assert_eq!(board.pieces[&c], Piece{color: Color::White, title: Title::Queen, has_moved: true});
     }
 }
