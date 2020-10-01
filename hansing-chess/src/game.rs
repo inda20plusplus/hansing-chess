@@ -34,6 +34,16 @@ impl Game {
             self.board.make_move(m);
             self.action_space = generate_action_space(self.board.clone());
             self.check_for_game_over();
+            self.history.push(self.board.clone());
+        }
+    }
+
+    
+    pub fn undo_move(&mut self) {
+        if self.history.len() != 0 {
+            let i = self.history.len() - 2;
+            self.board = self.history[i].clone();
+            self.history.remove(i + 1);
         }
     }
 
