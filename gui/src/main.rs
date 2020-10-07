@@ -1,3 +1,5 @@
+mod network;
+
 use ggez::event::{self, EventHandler};
 use ggez::graphics;
 use ggez::input::mouse;
@@ -9,7 +11,7 @@ use hansing_chess::square::Square;
 use hansing_chess::title::Title;
 
 use std::env;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 fn main() {
     // Make path for images
@@ -23,7 +25,7 @@ fn main() {
     };
     // Make a Context and an EventLoop.
     let (mut ctx, mut event_loop) = ContextBuilder::new("game_name", "author_name")
-    .add_resource_path(path)
+        .add_resource_path(path)
         .build()
         .unwrap();
 
@@ -37,8 +39,6 @@ fn main() {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occurred: {}", e),
     }
-
-
 }
 
 struct MyGame {
@@ -52,7 +52,6 @@ impl MyGame {
     pub fn new(ctx: &mut Context) -> MyGame {
         // Load/create resources here: images, fonts, sounds, etc.
         let mut v: Vec<graphics::Image> = Vec::new();
-        
         v.push(graphics::Image::new(ctx, "/white_pawn.png").unwrap());
         v.push(graphics::Image::new(ctx, "/white_rook.png").unwrap());
         v.push(graphics::Image::new(ctx, "/white_knight.png").unwrap());
