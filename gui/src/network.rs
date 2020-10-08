@@ -1,19 +1,17 @@
-use std::io::Read;
 use std::io::{Error, ErrorKind};
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
-struct Listener {
-    hist_packets: Vec<u8>,
-    listener: TcpListener,
+struct Networker {
+    listener: Option<TcpListener>,
     connection: Result<TcpStream, Error>,
 }
 
-impl Listener {
-    pub fn new(port: u16) -> Listener {
+impl Networker {
+    pub fn new(port: u16) -> Networker {
         let addr = format!("127.0.0.1:{}", port);
-        Listener {
-            hist_packets: Vec::new(),
-            listener: TcpListener::bind(addr).unwrap(),
+        Networker {
+            listener: Some(TcpListener::bind(addr).unwrap()),
             connection: Err(Error::new(
                 ErrorKind::NotConnected,
                 "No connection established",
@@ -21,19 +19,41 @@ impl Listener {
         }
     }
 
+    pub fn connect(ip_addr: (u8, u8, u8, u8), port: u16) -> Networker {
+        let addr = format!(
+            "{}.{}.{}.{}:{}",
+            ip_addr.0, ip_addr.1, ip_addr.2, ip_addr.3, port
+        );
+        Networker {
+            listener: None,
+            connection: Ok(TcpStream::connect(addr).unwrap()),
+        }
+    }
+
     pub fn check_connected(&mut self) -> Result<TcpStream, Error> {
-        match self.listener.accept() {
+        if self.listener.is_none() {
+            panic!("Listener is None but check for connection occurs");
+        }
+        match self.listener.as_ref().unwrap().accept() {
             Ok((stream, _addr)) => Ok(stream),
             Err(e) => Err(e),
         }
     }
 
-    pub fn next(&mut self) -> Result<u8, Error> {
+    pub fn read(&mut self) -> Result<u8, Error> {
         let mut ret: [u8; 1] = [0];
         match self.connection.as_ref() {
             Ok(mut stream) => stream.read(&mut ret),
-            Err(e) => return Err(Error::new(ErrorKind::InvalidData, "No data to read")),
+            Err(_e) => return Err(Error::new(ErrorKind::InvalidData, "No data to read")),
         };
         Ok(ret[0])
+    }
+
+    pub fn write(&mut self, data: &[u8]) -> Result<usize, Error> {
+        match self.connection.as_ref() {
+            Ok(mut stream) => stream.write(data),
+            Err(_e) => return Err(Error::new(ErrorKind::InvalidData, "Invalid data to send")),
+        };
+        Ok(data.len())
     }
 }

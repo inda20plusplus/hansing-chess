@@ -46,9 +46,82 @@ struct MyGame {
     sprites: Vec<graphics::Image>,
     game: Game,
     piece_holding: [i32; 2],
+    is_host: Option<bool>,
 }
 
 impl MyGame {
+    fn decide_online(ctx: &mut Context) -> Option<bool> {
+        graphics::clear(ctx, graphics::Color::from_rgb(15, 15, 20));
+
+        let host_x = 160.0;
+        let host_y = 0.0;
+        let host_size = 60.0;
+        let online_x = 160.0;
+        let online_y = 60.0;
+        let online_size = 60.0;
+        let offline_x = 160.0;
+        let offline_y = 120.0;
+        let offline_size = 60.0;
+
+        let host_button = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(0.0, 0.0, 60.0, 60.0),
+            graphics::Color::from_rgb(0, 200, 140),
+        )
+        .unwrap();
+
+        let online_button = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(0.0, 0.0, 60.0, 60.0),
+            graphics::Color::from_rgb(140, 60, 140),
+        )
+        .unwrap();
+
+        let offline_button = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(0.0, 0.0, 60.0, 60.0),
+            graphics::Color::from_rgb(200, 200, 140),
+        )
+        .unwrap();
+
+        let dst = graphics::DrawParam::default();
+
+        graphics::draw(ctx, &host_button, dst.dest([host_x, host_y]));
+        graphics::draw(ctx, &online_button, dst.dest([online_x, online_y]));
+        graphics::draw(ctx, &offline_button, dst.dest([offline_x, offline_y]));
+
+        graphics::present(ctx);
+
+        loop {
+            if mouse::button_pressed(ctx, mouse::MouseButton::Left) {
+                let coord = mouse::position(ctx);
+                if coord.x > online_x
+                    && coord.x < online_x + online_size
+                    && coord.y > online_y
+                    && coord.y < online_y + online_size
+                {
+                    return Some(false);
+                } else if coord.x > offline_x
+                    && coord.x < offline_x + offline_size
+                    && coord.y > offline_y
+                    && coord.y < offline_y + offline_size
+                {
+                    return None;
+                } else if coord.x > host_x
+                    && coord.x < host_x + host_size
+                    && coord.y > host_y
+                    && coord.y < host_y + host_size
+                {
+                    return Some(true);
+                }
+            }
+            timer::yield_now();
+        }
+    }
+
     pub fn new(ctx: &mut Context) -> MyGame {
         // Load/create resources here: images, fonts, sounds, etc.
         let mut v: Vec<graphics::Image> = Vec::new();
@@ -71,6 +144,7 @@ impl MyGame {
             sprites: v,
             game: Game::new(),
             piece_holding: [-1, -1],
+            is_host: MyGame::decide_online(ctx),
         }
     }
 
