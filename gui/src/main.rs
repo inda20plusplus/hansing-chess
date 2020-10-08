@@ -12,6 +12,11 @@ use hansing_chess::title::Title;
 
 use std::env;
 use std::path::PathBuf;
+use std::{thread, time};
+
+const IP_ADDRESS: (u8, u8, u8, u8) = (192, 168, 157, 102);
+const PORT: u16 = 17571;
+const CHECK_TIMER: std::time::Duration = time::Duration::from_millis(100);
 
 fn main() {
     // Make path for images
@@ -55,6 +60,7 @@ struct MyGame {
     game: Game,
     piece_holding: [i32; 2],
     status: Hosting,
+    networker: Option<network::Networker>,
 }
 
 impl MyGame {
@@ -81,6 +87,7 @@ impl MyGame {
             game: Game::new(),
             piece_holding: [-1, -1],
             status: Hosting::None,
+            networker: None,
         }
     }
 
@@ -167,7 +174,7 @@ impl MyGame {
         Ok(())
     }
 
-    fn decide_online(ctx: &mut Context) -> Hosting {
+    fn decide_online(&mut self, ctx: &mut Context) {
         graphics::clear(ctx, graphics::Color::from_rgb(15, 15, 20));
 
         let host_x = 160.0;
@@ -219,30 +226,43 @@ impl MyGame {
                 && coord.y > online_y
                 && coord.y < online_y + online_size
             {
-                return Hosting::Client;
+                self.status = Hosting::Client;
+                self.networker = Some(network::Networker::connect(IP_ADDRESS, PORT));
             } else if coord.x > offline_x
                 && coord.x < offline_x + offline_size
                 && coord.y > offline_y
                 && coord.y < offline_y + offline_size
             {
-                return Hosting::Offline;
+                self.status = Hosting::Offline;
             } else if coord.x > host_x
                 && coord.x < host_x + host_size
                 && coord.y > host_y
                 && coord.y < host_y + host_size
             {
-                return Hosting::Host;
+                self.status = Hosting::Host;
+                self.networker = Some(network::Networker::new(PORT));
+                let mut wait = true;
+                while wait {
+                    match self.networker.as_ref().unwrap().get_connected() {
+                        Ok(stream) => {
+                            self.networker.as_ref().unwrap().set_connection(stream);
+                            wait = false;
+                        }
+                        Err(e) => println!("{}", e),
+                    }
+                    thread::sleep(CHECK_TIMER);
+                }
             }
         }
-        Hosting::None
+        self.status = Hosting::None;
     }
 }
 
 impl EventHandler for MyGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         if self.status == Hosting::None {
-            self.status = MyGame::decide_online(ctx);
-        } else {
+            self.decide_online(ctx);
+        } else if self.status == Hosting::Offline {
             let coord = mouse::position(ctx);
             let coord_x: i32 = ((coord.x - 160.0) / 60.0) as i32;
             let coord_y: i32 = ((coord.y - 60.0) / 60.0) as i32;
@@ -275,6 +295,7 @@ impl EventHandler for MyGame {
             {
                 self.piece_holding = [-1, -1];
             }
+        } else if self.status == Hosting::Host {
         }
         timer::yield_now();
         Ok(())

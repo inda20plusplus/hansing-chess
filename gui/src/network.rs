@@ -2,7 +2,7 @@ use std::io::{Error, ErrorKind};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
-struct Networker {
+pub struct Networker {
     listener: Option<TcpListener>,
     connection: Result<TcpStream, Error>,
 }
@@ -30,7 +30,11 @@ impl Networker {
         }
     }
 
-    pub fn check_connected(&mut self) -> Result<TcpStream, Error> {
+    pub fn set_connection(&mut self, stream: TcpStream) {
+        self.connection = Ok(stream);
+    }
+
+    pub fn get_connected(&mut self) -> Result<TcpStream, Error> {
         if self.listener.is_none() {
             panic!("Listener is None but check for connection occurs");
         }
