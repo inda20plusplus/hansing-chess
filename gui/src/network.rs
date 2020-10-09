@@ -30,18 +30,15 @@ impl Networker {
         }
     }
 
-    pub fn set_connection(&mut self, stream: TcpStream) {
-        self.connection = Ok(stream);
-    }
-
-    pub fn get_connected(&mut self) -> Result<TcpStream, Error> {
+    pub fn check_connected(&mut self) -> bool {
         if self.listener.is_none() {
             panic!("Listener is None but check for connection occurs");
         }
         match self.listener.as_ref().unwrap().accept() {
-            Ok((stream, _addr)) => Ok(stream),
-            Err(e) => Err(e),
-        }
+            Ok((stream, _addr)) => self.connection = Ok(stream),
+            Err(_e) => return false,
+        };
+        true
     }
 
     pub fn read(&mut self) -> Result<u8, Error> {

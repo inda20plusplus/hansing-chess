@@ -243,14 +243,12 @@ impl MyGame {
                 self.networker = Some(network::Networker::new(PORT));
                 let mut wait = true;
                 while wait {
-                    match self.networker.as_ref().unwrap().get_connected() {
-                        Ok(stream) => {
-                            self.networker.as_ref().unwrap().set_connection(stream);
-                            wait = false;
-                        }
-                        Err(e) => println!("{}", e),
+                    if self.networker.as_mut().unwrap().check_connected() {
+                        wait = false;
+                    } else {
+                        println!("Waiting for connection");
+                        thread::sleep(CHECK_TIMER);
                     }
-                    thread::sleep(CHECK_TIMER);
                 }
             }
         }
