@@ -299,7 +299,7 @@ impl MyGame {
         if self.game.board.to_act == clr {
             let coords = self.local_move(ctx);
             if coords == (i32::MAX, i32::MAX, i32::MAX, i32::MAX) {
-                return Ok(());
+                return ();
             }
             let from_x = coords.0 as u64;
             let from_y = coords.1 as u64;
@@ -316,7 +316,7 @@ impl MyGame {
             let mut data: u8 = u8::MAX;
             match self.networker.as_mut().unwrap().read() {
                 Ok(byte) => data = byte,
-                Err(e) => return Ok(()), //Fix so it waits properly for data
+                Err(e) => return (), //Fix so it waits properly for data
             }
             if data == 0 {
                 panic!("Disagreement");
