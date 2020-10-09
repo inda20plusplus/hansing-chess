@@ -251,6 +251,7 @@ impl MyGame {
                     }
                 }
             }
+            return ();
         }
         self.status = Hosting::None;
     }
