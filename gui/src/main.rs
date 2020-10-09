@@ -254,6 +254,184 @@ impl MyGame {
         }
         self.status = Hosting::None;
     }
+
+    fn local_move(&mut self, ctx: &mut Context) -> (i32, i32, i32, i32) {
+        let coord = mouse::position(ctx);
+        let coord_x: i32 = ((coord.x - 160.0) / 60.0) as i32;
+        let coord_y: i32 = ((coord.y - 60.0) / 60.0) as i32;
+        let mut ret = (i32::MAX, i32::MAX, i32::MAX, i32::MAX);
+
+        if mouse::button_pressed(ctx, mouse::MouseButton::Left) && self.piece_holding == [-1, -1] {
+            if coord_x >= 0 && coord_x <= 7 && coord_y >= 0 && coord_y <= 7 {
+                self.piece_holding = [coord_x, coord_y];
+            }
+        } else if !mouse::button_pressed(ctx, mouse::MouseButton::Left)
+            && self.piece_holding != [-1, -1]
+        {
+            if coord_x >= 0 && coord_x <= 7 && coord_y >= 0 && coord_y <= 7 {
+                let all_moves = movegen::generate_action_space(self.game.board.clone());
+                for curr_move in all_moves.iter() {
+                    if curr_move.from
+                        == Square::new(self.piece_holding[1], self.piece_holding[0]).unwrap()
+                        && curr_move.to == Square::new(coord_y, coord_x).unwrap()
+                    {
+                        self.game.make_move(*curr_move);
+                        ret.0 = self.piece_holding[0];
+                        ret.1 = self.piece_holding[1];
+                        ret.2 = coord_x;
+                        ret.3 = coord_y;
+                        self.piece_holding = [-1, -1];
+                        break;
+                    }
+                }
+            }
+            self.piece_holding = [-1, -1];
+        } else if !mouse::button_pressed(ctx, mouse::MouseButton::Left)
+            && self.piece_holding != [-1, -1]
+        {
+            self.piece_holding = [-1, -1];
+        }
+
+        ret
+    }
+
+    fn online_move(&mut self, ctx: &mut Context, clr: Color) {
+        if self.game.board.to_act == clr {
+            let coords = self.local_move(ctx);
+            if coords == (i32::MAX, i32::MAX, i32::MAX, i32::MAX) {
+                return Ok(());
+            }
+            let from_x = coords.0 as u64;
+            let from_y = coords.1 as u64;
+            let to_x = coords.2 as u64;
+            let to_y = coords.3 as u64;
+            let mut origin: u8 = 0;
+            origin += from_x as u8;
+            origin += (from_y as u8) << 3;
+            let mut target: u8 = 0;
+            target += to_x as u8;
+            target += (from_y as u8) << 3;
+            self.networker.as_mut().unwrap().write(&[1, origin, target]);
+        } else {
+            let mut data: u8 = u8::MAX;
+            match self.networker.as_mut().unwrap().read() {
+                Ok(byte) => data = byte,
+                Err(e) => return Ok(()), //Fix so it waits properly for data
+            }
+            if data == 0 {
+                panic!("Disagreement");
+            } else if data == 1 {
+                let mut move_type: u8 = u8::MAX;
+                match self.networker.as_mut().unwrap().read() {
+                    Ok(byte) => move_type = byte,
+                    Err(e) => panic!(e),
+                }
+
+                if move_type == 0 || move_type == 1 || move_type == 2 {
+                    let mut from: u8 = u8::MAX;
+                    match self.networker.as_mut().unwrap().read() {
+                        Ok(byte) => from = byte,
+                        Err(e) => panic!(e),
+                    }
+                    let mut from_x: u8 = 0;
+                    from_x += from & (1 << 0);
+                    from_x += from & (1 << 1);
+                    from_x += from & (1 << 2);
+                    let mut from_y: u8 = 0;
+                    from_y += from & (1 << 3);
+                    from_y += from & (1 << 4);
+                    from_y += from & (1 << 5);
+                    from_y /= 8;
+                    let mut to: u8 = u8::MAX;
+                    match self.networker.as_mut().unwrap().read() {
+                        Ok(byte) => to = byte,
+                        Err(e) => panic!(e),
+                    }
+                    let mut to_x: u8 = 0;
+                    to_x += to & (1 << 0);
+                    to_x += to & (1 << 1);
+                    to_x += to & (1 << 2);
+                    let mut to_y: u8 = 0;
+                    to_y += to & (1 << 3);
+                    to_y += to & (1 << 4);
+                    to_y += to & (1 << 5);
+                    to_y /= 8;
+                    let all_moves = movegen::generate_action_space(self.game.board.clone());
+                    for curr_move in all_moves.iter() {
+                        if curr_move.from == Square::new(from_y as i32, from_x as i32).unwrap()
+                            && curr_move.to == Square::new(to_y as i32, to_x as i32).unwrap()
+                        {
+                            self.game.make_move(*curr_move);
+                            break;
+                        }
+                    }
+                    if move_type == 2 {
+                        let mut promotion_piece: u8 = u8::MAX;
+                        match self.networker.as_mut().unwrap().read() {
+                            Ok(byte) => promotion_piece = byte,
+                            Err(e) => panic!(e),
+                        }
+                    }
+
+                    if self.game.action_space.len() == 0 {
+                        if self.game.board.in_check {
+                            self.networker.as_mut().unwrap().write(&[4]);
+                        } else {
+                            self.networker.as_mut().unwrap().write(&[5]);
+                        }
+                    }
+                } else if move_type == 3 {
+                    let all_moves = movegen::generate_action_space(self.game.board.clone());
+                    for curr_move in all_moves.iter() {
+                        if curr_move.from == Square::new(7, 4).unwrap()
+                            && curr_move.to == Square::new(7, 6).unwrap()
+                        {
+                            self.game.make_move(*curr_move);
+                            break;
+                        }
+                    }
+                } else if move_type == 4 {
+                    let all_moves = movegen::generate_action_space(self.game.board.clone());
+                    for curr_move in all_moves.iter() {
+                        if curr_move.from == Square::new(7, 4).unwrap()
+                            && curr_move.to == Square::new(7, 2).unwrap()
+                        {
+                            self.game.make_move(*curr_move);
+                            break;
+                        }
+                    }
+                } else {
+                    panic!("Unknown move");
+                }
+            } else if data == 2 {
+                //TODO implement undo
+                self.networker.as_mut().unwrap().write(&[0]);
+            } else if data == 3 {
+                //TODO implement Accept (draw and undo)
+            } else if data == 4 {
+                if self.game.action_space.len() == 0 {
+                    if self.game.board.in_check {
+                        //Checkmate
+                    } else {
+                        self.networker.as_mut().unwrap().write(&[0]);
+                    }
+                }
+            } else if data == 5 {
+                if self.game.action_space.len() == 0 {
+                    if self.game.board.in_check {
+                        self.networker.as_mut().unwrap().write(&[0]);
+                    } else {
+                        // The game is drawn
+                    }
+                } else {
+                    // TODO implement draw request
+                    self.networker.as_mut().unwrap().write(&[0]);
+                }
+            } else if data == 6 {
+                // Game over
+            }
+        }
+    }
 }
 
 impl EventHandler for MyGame {
@@ -261,39 +439,11 @@ impl EventHandler for MyGame {
         if self.status == Hosting::None {
             self.decide_online(ctx);
         } else if self.status == Hosting::Offline {
-            let coord = mouse::position(ctx);
-            let coord_x: i32 = ((coord.x - 160.0) / 60.0) as i32;
-            let coord_y: i32 = ((coord.y - 60.0) / 60.0) as i32;
-
-            if mouse::button_pressed(ctx, mouse::MouseButton::Left)
-                && self.piece_holding == [-1, -1]
-            {
-                if coord_x >= 0 && coord_x <= 7 && coord_y >= 0 && coord_y <= 7 {
-                    self.piece_holding = [coord_x, coord_y];
-                }
-            } else if !mouse::button_pressed(ctx, mouse::MouseButton::Left)
-                && self.piece_holding != [-1, -1]
-            {
-                if coord_x >= 0 && coord_x <= 7 && coord_y >= 0 && coord_y <= 7 {
-                    let all_moves = movegen::generate_action_space(self.game.board.clone());
-                    for curr_move in all_moves.iter() {
-                        if curr_move.from
-                            == Square::new(self.piece_holding[1], self.piece_holding[0]).unwrap()
-                            && curr_move.to == Square::new(coord_y, coord_x).unwrap()
-                        {
-                            self.game.make_move(*curr_move);
-                            self.piece_holding = [-1, -1];
-                            break;
-                        }
-                    }
-                }
-                self.piece_holding = [-1, -1];
-            } else if !mouse::button_pressed(ctx, mouse::MouseButton::Left)
-                && self.piece_holding != [-1, -1]
-            {
-                self.piece_holding = [-1, -1];
-            }
+            self.local_move(ctx);
         } else if self.status == Hosting::Host {
+            self.online_move(ctx, Color::White);
+        } else if self.status == Hosting::Client {
+            self.online_move(ctx, Color::Black);
         }
         timer::yield_now();
         Ok(())
